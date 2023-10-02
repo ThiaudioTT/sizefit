@@ -2,6 +2,7 @@ const { app, BrowserWindow } = require('electron');
 const path = require('path');
 
 const isMac = process.platform === 'darwin';
+const isDev = process.env.NODE_ENV !== 'production';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -11,7 +12,7 @@ if (require('electron-squirrel-startup')) {
 const createMainWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 800,
+    width: isDev ? 1000 : 800,
     height: 600,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -21,8 +22,8 @@ const createMainWindow = () => {
   // and load the index.html of the app.
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
-  // Open the DevTools.
-  mainWindow.webContents.openDevTools();
+  // Open the DevTools if in development mode.
+  if(isDev) mainWindow.webContents.openDevTools();
 };
 
 // This method will be called when Electron has finished
