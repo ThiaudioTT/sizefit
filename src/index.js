@@ -58,6 +58,8 @@ const createMainWindow = () => {
     width: isDev ? 1000 : 800,
     height: 600,
     webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: true,
       preload: path.join(__dirname, 'preload.js'),
     },
   });
