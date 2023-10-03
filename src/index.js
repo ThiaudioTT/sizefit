@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, Menu } = require('electron');
 const path = require('path');
 
 const isMac = process.platform === 'darwin';
@@ -8,6 +8,49 @@ const isDev = process.env.NODE_ENV !== 'production';
 if (require('electron-squirrel-startup')) {
   app.quit();
 }
+
+// menu template
+const menu = [
+  ...(isMac
+    ? [
+        {
+          label: app.name,
+          submenu: [
+            {
+              label: "About",
+              click: () => createAboutWindow(),
+              accelerator: "CmdOrCtrl+a",
+            },
+          ],
+        },
+      ]
+    : []),
+  {
+    // label: 'File',
+    // submenu: [
+    //   {
+    //     label: 'Quit',
+    //     click: () => app.quit(),
+    //     accelerator: 'CmdOrCtrl+w'
+    //   }
+    // ]
+    role: "fileMenu",
+  },
+  ...(!isMac
+    ? [
+        {
+          label: "Help",
+          submenu: [
+            {
+              label: "About",
+              click: () => createAboutWindow(),
+              accelerator: "CmdOrCtrl+a",
+            },
+          ],
+        },
+      ]
+    : []),
+];
 
 const createMainWindow = () => {
   // Create the browser window.
@@ -24,7 +67,27 @@ const createMainWindow = () => {
 
   // Open the DevTools if in development mode.
   if(isDev) mainWindow.webContents.openDevTools();
+
+
+  const mainMenu = Menu.buildFromTemplate(menu);
+  Menu.setApplicationMenu(mainMenu);
 };
+
+
+function createAboutWindow() {
+  // Create the browser window.
+  const aboutWindow = new BrowserWindow({
+    title: "About SizeFit",
+    width: 300,
+    height: 300,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+    },
+  });
+
+  // and load the index.html of the app.
+  aboutWindow.loadFile(path.join(__dirname, './renderer/about.html'));
+}
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
