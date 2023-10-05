@@ -3,10 +3,10 @@
 const os = require('os');
 const path = require('path');
 const { contextBridge, ipcRenderer } = require('electron');
-// const Toastify = require('toastify-js');
+const Toastify = require('toastify-js');
 
 contextBridge.exposeInMainWorld('os', {
-  homedir: () => os.homedir(),
+  homedir: () => os.homedir(), // we can use os.homedir() in the renderer process
 });
 
 contextBridge.exposeInMainWorld('path', {

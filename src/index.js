@@ -1,8 +1,14 @@
-const { app, BrowserWindow, Menu } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, shell } = require('electron');
+const os = require('os');
+const fs = require('fs');
 const path = require('path');
+const resizeImg = require('resize-img');
 
 const isMac = process.platform === 'darwin';
 const isDev = process.env.NODE_ENV !== 'production';
+
+let mainWindow;
+let aboutWindow;
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -54,7 +60,7 @@ const menu = [
 
 const createMainWindow = () => {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: isDev ? 1000 : 800,
     height: 600,
     webPreferences: {
@@ -73,12 +79,15 @@ const createMainWindow = () => {
 
   const mainMenu = Menu.buildFromTemplate(menu);
   Menu.setApplicationMenu(mainMenu);
+
+  // Remove variable from memory
+  mainWindow.on('closed', () => (mainWindow = null));
 };
 
 
 function createAboutWindow() {
   // Create the browser window.
-  const aboutWindow = new BrowserWindow({
+  aboutWindow = new BrowserWindow({
     title: "About SizeFit",
     width: 300,
     height: 300,
@@ -89,6 +98,9 @@ function createAboutWindow() {
 
   // and load the index.html of the app.
   aboutWindow.loadFile(path.join(__dirname, './renderer/about.html'));
+
+  // Remove variable from memory
+  aboutWindow.on('closed', () => (aboutWindow = null));
 }
 
 // This method will be called when Electron has finished
@@ -115,3 +127,39 @@ app.on('activate', () => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
+
+
+ipcMain.on('image:resize', (e, options) => {
+  options.dest = path.join(os.homedir(), 'imageresizer');
+  resizeImage(options);
+})
+
+async function resizeImage({imgPath, width, height, dest}) {
+  try {
+    const newPath = await resizeImg(fs.readFileSync(imgPath), {
+      width: +width,
+      height: +height,
+    });
+
+    // create filename
+    const filename  = path.basename(imgPath);
+
+    // create dest folder if it doesn't exist
+    if (!fs.existsSync(dest)) {
+      fs.mkdirSync(dest);
+    }
+
+    // write file to dest
+    fs.writeFileSync(path.join(dest, filename), newPath);
+
+    // send done message to renderer
+    mainWindow.webContents.send('image:done');
+
+    // open dest folder
+    shell.openPath(dest);
+  } catch (error) {
+    console.log(error)
+
+  }
+
+};
